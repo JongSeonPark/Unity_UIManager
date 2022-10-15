@@ -7,29 +7,36 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using UnityEditor;
+using UnityEngine.Events;
 
 namespace ChickenGames.UI
 {
     public abstract class UIBase : MonoBehaviour
     {
-        List<Func<UniTask>> initFuncAsyncs = new List<Func<UniTask>>();
+        List<Func<UniTask>> loadFuncAsyncs = new List<Func<UniTask>>();
 
-        public IReadOnlyList<Func<UniTask>> InitFuncAsyncs => initFuncAsyncs;
+        public List<Func<UniTask>> LoadFuncAsyncs => loadFuncAsyncs;
 
-        int millisecondsDelayTimer = 3f;
+        int millisecondsDelayTimer = 3000;
 
-        public virtual async UniTask InitializeAsync(Action onDelay = null, Action onDelayDone = null, IProgress<float> progress = null, CancellationToken cancellationToken = default)
+        protected UnityEvent onLoadingDelay = new UnityEvent(), onLoadingDelayDone = new UnityEvent();
+
+        public abstract void Init();
+
+        public virtual async UniTask LoadingAsync(IProgress<float> progress = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var tasks = initFuncAsyncs.Select(func => func.Invoke());
-            
+            if (loadFuncAsyncs.Count == 0) return;
+
+            var tasks = loadFuncAsyncs.Select(func => func.Invoke());
+
             int doneCount = 0;
-            while (await UniTask.WhenAny(tasks) == initFuncAsyncs.Count)
+            while (await UniTask.WhenAny(tasks) == loadFuncAsyncs.Count)
             {
-                progress?.Report((float)++doneCount / initFuncAsyncs.Count);
+                progress?.Report((float)++doneCount / loadFuncAsyncs.Count);
             }
 
-            initFuncAsyncs.Clear();
+            loadFuncAsyncs.Clear();
         }
     }
 }

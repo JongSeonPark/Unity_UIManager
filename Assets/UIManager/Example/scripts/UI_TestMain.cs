@@ -3,16 +3,19 @@ using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UI_TestMain : MonoBehaviour
 {
-    // Start is called before the first frame update
+    [SerializeField]
+    Text loggerText;
+
     void Start()
     {
+        loggerText.text = string.Empty;
         UIManager.InstantiateUI("UI_TestDelay").Forget();
     }
 
-    // Update is called once per frame
     void Update()
     {
         

@@ -11,6 +11,5 @@ namespace ChickenGames.UI
 {
     public abstract class PopupBase : UIBase
     {
-        List<Func<UniTask>> initFuncAsyncs = new List<Func<UniTask>>();
     }
 }

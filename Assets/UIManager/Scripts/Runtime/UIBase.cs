@@ -15,11 +15,12 @@ namespace ChickenGames.UI
     {
         List<Func<UniTask>> loadFuncAsyncs = new List<Func<UniTask>>();
 
-        public List<Func<UniTask>> LoadFuncAsyncs => loadFuncAsyncs;
-
         int millisecondsDelayTimer = 3000;
 
         protected UnityEvent onLoadingDelay = new UnityEvent(), onLoadingDelayDone = new UnityEvent();
+
+        public List<Func<UniTask>> LoadFuncAsyncs => loadFuncAsyncs;
+        public int MillisecondsDelayTimer { get => millisecondsDelayTimer; set => millisecondsDelayTimer = value; }
 
         public abstract void Init();
 
@@ -30,12 +31,32 @@ namespace ChickenGames.UI
 
             var tasks = loadFuncAsyncs.Select(func => func.Invoke());
 
+            CancellationTokenSource delayCts = new CancellationTokenSource();
+            bool delayRun = false;
+            UniTask.Void(async () =>
+            {
+                await UniTask.Delay(millisecondsDelayTimer);
+                if (!delayCts.IsCancellationRequested)
+                {
+                    onLoadingDelay?.Invoke();
+                    delayRun = true;
+                }
+                onLoadingDelay?.RemoveAllListeners();
+            });
+
             int doneCount = 0;
             while (await UniTask.WhenAny(tasks) == loadFuncAsyncs.Count)
             {
                 progress?.Report((float)++doneCount / loadFuncAsyncs.Count);
             }
 
+            delayCts.Cancel();
+            if (delayRun)
+            {
+                onLoadingDelayDone?.Invoke();
+            }
+
+            onLoadingDelayDone?.RemoveAllListeners();
             loadFuncAsyncs.Clear();
         }
     }

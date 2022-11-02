@@ -1,7 +1,7 @@
 {
   "name": "com.chickengames.uimanager",
-  "version": "0.0.1",
-  "displayName": "UIManagerForMe",
+  "version": "0.0.2",
+  "displayName": "Chickengames_UIManager",
   "description": "This is an Test package",
   "unity": "2021.3",
   "licensesUrl": "https://github.com/JongSeonPark/Unity_UIManager/blob/dev/LICENSE",

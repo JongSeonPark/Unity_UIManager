@@ -13,24 +13,43 @@ namespace ChickenGames.UI
 {
     public abstract class UIBase : MonoBehaviour
     {
-        public List<Func<UniTask>> LoadFuncAsyncs { get; protected set; } = new List<Func<UniTask>>();
+        public List<Func<IProgress<float>, CancellationToken, UniTask>> LoadFuncAsyncs { get; protected set; } = new List<Func<IProgress<float>, CancellationToken, UniTask>>();
 
-        public abstract void Init();
+        public virtual void Init() { }
 
         public virtual async UniTask LoadingAsync(IProgress<float> progress = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (LoadFuncAsyncs.Count == 0) return;
 
-            var tasks = LoadFuncAsyncs.Select(func => func.Invoke());
-            
-            int doneCount = 0;
-            while (await UniTask.WhenAny(tasks) == LoadFuncAsyncs.Count)
+
+            float[] progressValues = new float[LoadFuncAsyncs.Count];
+
+            int pIdx = 0;
+            var tasks = LoadFuncAsyncs.Select(func =>
             {
-                progress?.Report((float)++doneCount / LoadFuncAsyncs.Count);
-            }
+                var p = new Progress<float>();
+
+                int progressIdx = pIdx++;
+                p.ProgressChanged += (v, v2) =>
+                {
+                    progressValues[progressIdx] = v2;
+                    progress?.Report(progressValues.Sum() / progressValues.Length);
+                };
+                
+                return UniTask.Create(async () =>
+                {
+                    await func.Invoke(p, cancellationToken);
+                    (p as IProgress<float>).Report(1);
+                });
+            }).ToList();
+
+            await UniTask.WhenAll(tasks);
+
 
             LoadFuncAsyncs.Clear();
         }
+
+        public virtual void Close() { }
     }
 }

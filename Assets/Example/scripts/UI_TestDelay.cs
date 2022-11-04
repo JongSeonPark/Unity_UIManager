@@ -18,8 +18,10 @@ public class UI_TestDelay : PopupBase
     {
         Debug.Log("Initialize");
 
-        LoadFuncAsyncs.Add(async () =>
+        LoadFuncAsyncs.Add(async (p, ct) =>
         {
+            ct.ThrowIfCancellationRequested();
+
             await UniTask.Delay(3000);
             Debug.Log("Load Done");
 

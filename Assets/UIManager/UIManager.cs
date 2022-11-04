@@ -23,13 +23,17 @@ namespace ChickenGames.UI
             }
             Instance = new UIManager();
             Instance.resourceLoader = resourceLoader;
-            Instance.root = uiRoot;
+            Instance.Root = uiRoot;
         }
         
 
         List<PopupBase> popups = new List<PopupBase>();
+        Stack<PageBase> pages = new Stack<PageBase>();
         IResourceLoader resourceLoader = new ResourcesLoader();
         Transform root;
+
+        public RectTransform PageRoot { get; private set; }
+        public RectTransform PopupRoot { get; private set; }
         public Transform Root { 
             get
             {
@@ -44,22 +48,44 @@ namespace ChickenGames.UI
                     }
                 }
                 return root;
-            } 
-            set => root = value; 
+            }
+            private set
+            {
+                root = value;
+                var pagesObj = new GameObject("Pages");
+                var popupsObj = new GameObject("Popups");
+                PageRoot = pagesObj.AddComponent<RectTransform>();
+                PopupRoot = popupsObj.AddComponent<RectTransform>();
+
+                PageRoot.anchorMin = new Vector2(0, 0);
+                PageRoot.anchorMax = new Vector2(1, 1);
+                PageRoot.position = new Vector3(0, 0, 0);
+                PageRoot.sizeDelta = new Vector2(0, 0);
+
+                PopupRoot.anchorMin = new Vector2(0, 0);
+                PopupRoot.anchorMax = new Vector2(1, 1);
+                PopupRoot.position = new Vector3(0, 0, 0);
+                PopupRoot.sizeDelta = new Vector2(0, 0);
+
+                PageRoot.SetParent(Root, false);
+                PopupRoot.SetParent(Root, false);
+
+            }
         }
 
         
         public UIInstantiateRequest InstantiateUI(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
         {
-            return new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, root);
+            return new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay);
         }        
 
         public UIInstantiateRequest OpenPopup(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
         {
-            var req = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, root);
+            var req = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PopupRoot);
             req.Complete += (obj) => {
                 var popupComp = obj.GetComponent<PopupBase>();
                 var trans = obj.GetComponent<Transform>();
+
                 popupComp.OnClick.AddListener(_ =>
                 {
                     Debug.Log("OnClick popup");
@@ -78,6 +104,32 @@ namespace ChickenGames.UI
             };
             return req;
         }
+
+        public UIInstantiateRequest OpenPage(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
+        {
+            var req = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PageRoot);
+            req.Complete += (obj) => {
+                var pageComp = obj.GetComponent<PageBase>();
+                var trans = obj.GetComponent<Transform>();
+
+                //popupComp.OnClick.AddListener(_ =>
+                //{
+                //    Debug.Log("OnClick popup");
+                //    popups.Remove(popupComp);
+                //    popups.Add(popupComp);
+                //    trans.SetAsLastSibling();
+                //});
+
+                //popupComp.OnClose.AddListener(() =>
+                //{
+                //    popups.Remove(popupComp);
+                //    Object.Destroy(obj);
+                //});
+
+                pages.Push(pageComp);
+            };
+            return req;
+        }
     }
 
     public class UIInstantiateRequest : CustomYieldInstruction
@@ -91,8 +143,6 @@ namespace ChickenGames.UI
         public int MillisecondsDelayTimer { get; protected set; } = 1000;
 
         public GameObject Result { get; protected set; }
-
-
 
         public UIInstantiateRequest(IResourceLoader loader, string path, IProgress<float> progress, CancellationToken cancellationToken, int millisecondsDelayTimer = 3000, Transform parent = null)
         {
@@ -132,7 +182,7 @@ namespace ChickenGames.UI
 
 
                 if (parent !=  null)
-                    uiObject.GetComponent<Transform>().SetParent(parent);
+                    uiObject.GetComponent<Transform>().SetParent(parent, false);
 
                 Result = uiObject;
 

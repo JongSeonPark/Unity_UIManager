@@ -1,12 +1,9 @@
 using ChickenGames.UI;
 using Cysharp.Threading.Tasks;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
-using UnityEngine.UI;
 
-public class UI_TestDelay : PopupBase
+public class TestLoopPopup : PopupBase
 {
     [SerializeField]
     RectTransform panelTransform;
@@ -25,22 +22,22 @@ public class UI_TestDelay : PopupBase
             await UniTask.Delay(3000);
             Debug.Log("Load Done");
 
-            StartAsync().Forget();
+            StartAsync(ct).Forget();
         });
     }
 
-    private void Start()
-    {
-    }
+    CancellationTokenSource openUICTS;
 
-    async UniTask StartAsync()
+    async UniTask StartAsync(CancellationToken ct)
     {
-        UIInstantiateRequest request = UIManager.Instance.OpenPopup("UI_TestDelay");
+        ct.ThrowIfCancellationRequested();
+
+        openUICTS = new CancellationTokenSource();
+        UIInstantiateRequest request = UIManager.Instance.OpenPopup("TestLoopPopup", cancellationToken: openUICTS.Token);
 
         request.onLoadingDelay.AddListener(() =>
         {
             loadingCTS = new CancellationTokenSource();
-
             UniTask.Void(async () =>
             {
                 var obj = await Resources.LoadAsync<GameObject>("LoadingUI");
@@ -58,10 +55,20 @@ public class UI_TestDelay : PopupBase
             loadingObject = null;
         });
 
+        request.Complete += (obj) =>
+        {
+            obj.GetComponent<Transform>().localPosition = transform.localPosition + new Vector3(10, 0);
+        };
         await request;
-        var popup = request.Result;
 
+        openUICTS?.Dispose();
+        openUICTS = null;
+    }
 
-        popup.GetComponent<Transform>().localPosition = transform.localPosition + new Vector3(10, 0);
+    public override void Close()
+    {
+        base.Close();
+        openUICTS?.Cancel();
+        openUICTS?.Dispose();
     }
 }

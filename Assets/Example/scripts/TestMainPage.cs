@@ -1,12 +1,12 @@
 using ChickenGames.UI;
 using Cysharp.Threading.Tasks;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class TestMainPage : PageBase
 {
+    [SerializeField]
+    Button openSubPageButton;
 
     public override void Init()
     {
@@ -35,6 +35,11 @@ public class TestMainPage : PageBase
             ct.ThrowIfCancellationRequested();
             await UniTask.Delay(5300);
             Debug.Log("Done4");
+        });
+
+        openSubPageButton?.onClick.AddListener(() =>
+        {
+            UIManager.Instance.OpenPage("TestSubPage");
         });
     }
 }

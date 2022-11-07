@@ -8,10 +8,9 @@ using UnityEngine.UI;
 public class UI_TestMain : MonoBehaviour
 {
     [SerializeField]
-    Text loggerText;
-
-    [SerializeField]
     Transform uiRoot;
+    [SerializeField]
+    Button mobileBackspaceButton;
 
     private void Awake()
     {
@@ -20,9 +19,8 @@ public class UI_TestMain : MonoBehaviour
     void Start()
     {
         UIManager.CreateInstance(new ResourcesLoader(), uiRoot);
-
-        loggerText.text = string.Empty;
         StartAsync().Forget();
+        mobileBackspaceButton?.onClick.AddListener(() => UIManager.Instance.CloseCurrentPage());
     }
 
 
@@ -37,10 +35,10 @@ public class UI_TestMain : MonoBehaviour
         await request;
         var popup = request.Result;
         popup.GetComponent<Transform>().localPosition = new Vector3(0, 0);
-    }
 
-    void Update()
-    {
-        
+        UIManager.Instance.OnLastPageClose += () =>
+        {
+            Debug.Log("LastPage");
+        };
     }
 }

@@ -25,7 +25,7 @@ namespace ChickenGames.UI
             Instance.resourceLoader = resourceLoader;
             Instance.Root = uiRoot;
         }
-        
+
 
         List<PopupBase> popups = new List<PopupBase>();
         Stack<PageBase> pages = new Stack<PageBase>();
@@ -34,7 +34,8 @@ namespace ChickenGames.UI
 
         public RectTransform PageRoot { get; private set; }
         public RectTransform PopupRoot { get; private set; }
-        public Transform Root { 
+        public Transform Root
+        {
             get
             {
                 if (root == null)
@@ -69,20 +70,20 @@ namespace ChickenGames.UI
 
                 PageRoot.SetParent(Root, false);
                 PopupRoot.SetParent(Root, false);
-
             }
         }
 
-        
+
         public UIInstantiateRequest InstantiateUI(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
         {
             return new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay);
-        }        
+        }
 
         public UIInstantiateRequest OpenPopup(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
         {
-            var req = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PopupRoot);
-            req.Complete += (obj) => {
+            var request = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PopupRoot);
+            request.Complete += (obj) =>
+            {
                 var popupComp = obj.GetComponent<PopupBase>();
                 var trans = obj.GetComponent<Transform>();
 
@@ -97,38 +98,38 @@ namespace ChickenGames.UI
                 popupComp.OnClose.AddListener(() =>
                 {
                     popups.Remove(popupComp);
-                    Object.Destroy(obj);
                 });
 
                 popups.Add(popupComp);
             };
-            return req;
+            return request;
         }
 
         public UIInstantiateRequest OpenPage(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
         {
-            var req = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PageRoot);
-            req.Complete += (obj) => {
+            var request = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PageRoot);
+            request.Complete += (obj) =>
+            {
                 var pageComp = obj.GetComponent<PageBase>();
                 var trans = obj.GetComponent<Transform>();
 
-                //popupComp.OnClick.AddListener(_ =>
-                //{
-                //    Debug.Log("OnClick popup");
-                //    popups.Remove(popupComp);
-                //    popups.Add(popupComp);
-                //    trans.SetAsLastSibling();
-                //});
-
-                //popupComp.OnClose.AddListener(() =>
-                //{
-                //    popups.Remove(popupComp);
-                //    Object.Destroy(obj);
-                //});
-
                 pages.Push(pageComp);
             };
-            return req;
+            return request;
+        }
+
+
+        public Action OnLastPageClose { get; set; }
+        public void CloseCurrentPage()
+        {
+            if (pages.Count > 1 && pages.TryPop(out var page))
+            {
+                page.Close();
+            }
+            else
+            {
+                OnLastPageClose?.Invoke();
+            }
         }
     }
 
@@ -148,7 +149,7 @@ namespace ChickenGames.UI
         {
             MillisecondsDelayTimer = millisecondsDelayTimer;
 
-            UniTask.Void(async () =>
+            UniTask.Create(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -167,21 +168,36 @@ namespace ChickenGames.UI
 
                 var res = await loader.LoadAsync(path) as GameObject;
 
+                if (res == null)
+                {
+                    throw new Exception($"{path} is not exist..");
+                }
+
                 var uiObject = Object.Instantiate(res);
                 var uiComp = uiObject.GetComponent<UIBase>();
                 uiComp.Init();
+
+
+                cancellationToken.Register(() =>
+                {
+                    Object.Destroy(uiObject);
+                });
+
                 await uiComp.LoadingAsync(progress, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                Debug.Log("isCancel??");
 
                 IsDone = true;
 
                 delayCts.Cancel();
+                delayCts.Dispose();
                 if (delayRun)
                     onLoadingDelayDone?.Invoke();
 
                 onLoadingDelayDone?.RemoveAllListeners();
 
 
-                if (parent !=  null)
+                if (parent != null)
                     uiObject.GetComponent<Transform>().SetParent(parent, false);
 
                 Result = uiObject;

@@ -3,43 +3,46 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class TestMainPage : PageBase
+namespace ChickenGames.Test
 {
-    [SerializeField]
-    Button openSubPageButton;
-
-    public override void Init()
+    public class TestMainPage : PageBase
     {
-        base.Init();
-        
-        LoadFuncAsyncs.Add(async (p, ct) =>
-        {
-            ct.ThrowIfCancellationRequested();
-            await UniTask.Delay(500);
-            Debug.Log("Done1");
-        });
-        LoadFuncAsyncs.Add(async (p, ct) =>
-        {
-            ct.ThrowIfCancellationRequested();
-            await UniTask.Delay(1000);
-            Debug.Log("Done2");
-        });
-        LoadFuncAsyncs.Add(async (p, ct) =>
-        {
-            ct.ThrowIfCancellationRequested();
-            await UniTask.Delay(2500);
-            Debug.Log("Done3");
-        });
-        LoadFuncAsyncs.Add(async (p, ct) =>
-        {
-            ct.ThrowIfCancellationRequested();
-            await UniTask.Delay(5300);
-            Debug.Log("Done4");
-        });
+        [SerializeField]
+        Button openSubPageButton;
 
-        openSubPageButton?.onClick.AddListener(() =>
+        public override void Init()
         {
-            UIManager.Instance.OpenPage("TestSubPage");
-        });
+            base.Init();
+
+            LoadFuncAsyncs.Add(async (p, ct) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                await UniTask.Delay(500);
+                Debug.Log("Done1");
+            });
+            LoadFuncAsyncs.Add(async (p, ct) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                await UniTask.Delay(1000);
+                Debug.Log("Done2");
+            });
+            LoadFuncAsyncs.Add(async (p, ct) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                await UniTask.Delay(2500);
+                Debug.Log("Done3");
+            });
+            LoadFuncAsyncs.Add(async (p, ct) =>
+            {
+                ct.ThrowIfCancellationRequested();
+                await UniTask.Delay(5300);
+                Debug.Log("Done4");
+            });
+
+            openSubPageButton?.onClick.AddListener(() =>
+            {
+                UIManager.Instance.OpenPage("TestSubPage");
+            });
+        }
     }
 }

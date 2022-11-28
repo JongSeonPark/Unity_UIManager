@@ -2,9 +2,9 @@
   "name": "com.chickengames.uimanager",
   "version": "0.0.3",
   "displayName": "Chickengames_UIManager",
-  "description": "This is an Test package",
+  "description": "",
   "unity": "2021.3",
-  "licensesUrl": "https://github.com/JongSeonPark/Unity_UIManager/blob/dev/LICENSE",
+  "licensesUrl": "https://github.com/JongSeonPark/Unity_UIManager/blob/main/Beerware%20License",
   "dependencies": {
     "com.cysharp.unitask": "2.3.1"
   },

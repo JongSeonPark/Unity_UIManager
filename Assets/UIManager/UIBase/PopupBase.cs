@@ -20,7 +20,7 @@ namespace ChickenGames.UI
             closeButton?.onClick.AddListener(Close);
             if (header != null)
             {
-                var headerMono = header.AddComponent<HeaderMono>();
+                var headerMono = header.AddComponent<PopupHeader>();
                 headerMono.PopupTransform = transform;
             }
         }
@@ -40,7 +40,7 @@ namespace ChickenGames.UI
     }
 
 
-    class HeaderMono : MonoBehaviour, IDragHandler, IBeginDragHandler
+    class PopupHeader : MonoBehaviour, IDragHandler, IBeginDragHandler
     {
         public Transform PopupTransform { get; set; }
 

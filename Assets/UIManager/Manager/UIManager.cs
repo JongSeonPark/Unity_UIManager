@@ -4,15 +4,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using Object = UnityEngine.Object;
 
 namespace ChickenGames.UI
 {
-    public class UIManager
+    public sealed class UIManager
     {
         public static UIManager Instance { get; private set; } = null;
+
+        private UIManager() { }
 
         public static void CreateInstance(IResourceLoader resourceLoader, Transform uiRoot)
         {
@@ -29,7 +32,7 @@ namespace ChickenGames.UI
 
         List<PopupBase> popups = new List<PopupBase>();
         Stack<PageBase> pages = new Stack<PageBase>();
-        IResourceLoader resourceLoader = new ResourcesLoader();
+        IResourceLoader resourceLoader = new UnityResourceLoader();
         Transform root;
 
         public RectTransform PageRoot { get; private set; }
@@ -58,15 +61,8 @@ namespace ChickenGames.UI
                 PageRoot = pagesObj.AddComponent<RectTransform>();
                 PopupRoot = popupsObj.AddComponent<RectTransform>();
 
-                PageRoot.anchorMin = new Vector2(0, 0);
-                PageRoot.anchorMax = new Vector2(1, 1);
-                PageRoot.position = new Vector3(0, 0, 0);
-                PageRoot.sizeDelta = new Vector2(0, 0);
-
-                PopupRoot.anchorMin = new Vector2(0, 0);
-                PopupRoot.anchorMax = new Vector2(1, 1);
-                PopupRoot.position = new Vector3(0, 0, 0);
-                PopupRoot.sizeDelta = new Vector2(0, 0);
+                SetFullScreenRectTransform(PageRoot);
+                SetFullScreenRectTransform(PopupRoot);
 
                 PageRoot.SetParent(Root, false);
                 PopupRoot.SetParent(Root, false);
@@ -131,6 +127,14 @@ namespace ChickenGames.UI
                 OnLastPageClose?.Invoke();
             }
         }
+
+        void SetFullScreenRectTransform(RectTransform rectTransform)
+        {
+            rectTransform.anchorMin = new Vector2(0, 0);
+            rectTransform.anchorMax = new Vector2(1, 1);
+            rectTransform.position = new Vector3(0, 0, 0);
+            rectTransform.sizeDelta = new Vector2(0, 0);
+        }
     }
 
     public class UIInstantiateRequest : CustomYieldInstruction
@@ -148,7 +152,6 @@ namespace ChickenGames.UI
         public UIInstantiateRequest(IResourceLoader loader, string path, IProgress<float> progress, CancellationToken cancellationToken, int millisecondsDelayTimer = 3000, Transform parent = null)
         {
             MillisecondsDelayTimer = millisecondsDelayTimer;
-
             UniTask.Create(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -185,7 +188,6 @@ namespace ChickenGames.UI
 
                 await uiComp.LoadingAsync(progress, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                Debug.Log("isCancel??");
 
                 IsDone = true;
 
@@ -212,20 +214,6 @@ namespace ChickenGames.UI
         protected virtual Object GetResult()
         {
             return uiObject;
-        }
-
-    }
-
-    public interface IResourceLoader
-    {
-        UniTask<Object> LoadAsync(string path);
-    }
-
-    public class ResourcesLoader : IResourceLoader
-    {
-        public async UniTask<Object> LoadAsync(string path)
-        {
-            return await Resources.LoadAsync(path);
         }
     }
 }

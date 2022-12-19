@@ -1,11 +1,5 @@
 # UIManager
 
-태그: README
-
-# UIManager
-
----
-
 이 프로젝트는 Task 기반의 UIManager를 제작하기 위해 만들어졌습니다. **resource, server등의 여러 비동기 API에 대응하기 위해 비동기 Task를 통합 관리**하여 Page, Popup등의 UI를 띄우도록 설계되었습니다. 
 
 Page 관리하는 모습
@@ -23,8 +17,6 @@ Popup 관리하는 모습
 - namespace 등에 포함된 회사명 ChickenGames는 현존하는 회사가 아니며, 만약 다른 곳에서 사용하고 있다면 저와 무관합니다.
 
 ## Getting Start
-
----
 
 [Release](https://github.com/JongSeonPark/Unity_UIManager/releases)에서 관련 코드 예제를 다운 받을 수 있습니다.
 
@@ -167,7 +159,7 @@ async UniTask StartAsync(CancellationToken ct)
             openUICTS = new CancellationTokenSource();
             UIInstantiateRequest request = UIManager.Instance.OpenPopup("TestLoopPopup", cancellationToken: openUICTS.Token);
 						
-						// 딜레이 되었으니 로딩 UI를 생성함.
+            // 딜레이 되었으니 로딩 UI를 생성함.
             request.onLoadingDelay.AddListener(() =>
             {
                 loadingCTS = new CancellationTokenSource();
@@ -180,7 +172,7 @@ async UniTask StartAsync(CancellationToken ct)
                 });
             });
 
-						// 딜레이가 끝났으니 생성된 로딩 UI를 제거함.
+            // 딜레이가 끝났으니 생성된 로딩 UI를 제거함.
             request.onLoadingDelayDone.AddListener(() =>
             {
                 loadingCTS.Cancel();
@@ -189,7 +181,7 @@ async UniTask StartAsync(CancellationToken ct)
                 loadingObject = null;
             });
 
-						// 생성이 완료 되었을 때 위치를 잡음.
+            // 생성이 완료 되었을 때 위치를 잡음.
             request.Complete += (obj) =>
             {
                 obj.GetComponent<Transform>().localPosition = transform.localPosition + new Vector3(10, 0);
@@ -203,7 +195,6 @@ async UniTask StartAsync(CancellationToken ct)
 
 ## 설치
 
----
 
 이 프로젝트는 [UniTask](https://github.com/Cysharp/UniTask)를 사용하고 있습니다. 설치를 진행하기 전, 유니티 프로젝트에 [UniTask](https://github.com/Cysharp/UniTask)를 설치 후 진행해주세요. 
 
@@ -235,6 +226,5 @@ Packages/manifest.json에서 아래 내용을 추가하여 설치할 수 있습�
 
 ## 🍻 License
 
----
 
 이 프로젝트는 Unity외의 외부에서 작성된 코드를 포함하고 있지 않으며, 제가 작성된 코드에 대해서는 Beer License를 사용하고 있습니다. 행복하세요. :)

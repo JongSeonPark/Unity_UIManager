@@ -1,18 +1,14 @@
-using Cysharp.Threading.Tasks;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Events;
-using Object = UnityEngine.Object;
 
 namespace ChickenGames.UI
 {
     public sealed class UIManager
     {
+        #region Singleton
+
         public static UIManager Instance { get; private set; } = null;
 
         private UIManager() { }
@@ -29,10 +25,11 @@ namespace ChickenGames.UI
             Instance.Root = uiRoot;
         }
 
+        #endregion
 
         List<PopupBase> popups = new List<PopupBase>();
         Stack<PageBase> pages = new Stack<PageBase>();
-        IResourceLoader resourceLoader = new UnityResourceLoader();
+        IResourceLoader resourceLoader;
         Transform root;
 
         public RectTransform PageRoot { get; private set; }
@@ -69,12 +66,6 @@ namespace ChickenGames.UI
             }
         }
 
-
-        public UIInstantiateRequest InstantiateUI(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
-        {
-            return new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay);
-        }
-
         public UIInstantiateRequest OpenPopup(string path, IProgress<float> progress = null, CancellationToken cancellationToken = default, int delay = 1000)
         {
             var request = new UIInstantiateRequest(resourceLoader, path, progress, cancellationToken, delay, PopupRoot);
@@ -94,6 +85,7 @@ namespace ChickenGames.UI
                 popupComp.OnClose.AddListener(() =>
                 {
                     popups.Remove(popupComp);
+                    resourceLoader.ReleaseInstance(obj);
                 });
 
                 popups.Add(popupComp);
@@ -121,6 +113,7 @@ namespace ChickenGames.UI
             if (pages.Count > 1 && pages.TryPop(out var page))
             {
                 page.Close();
+                resourceLoader.ReleaseInstance(page.gameObject);
             }
             else
             {
@@ -134,86 +127,6 @@ namespace ChickenGames.UI
             rectTransform.anchorMax = new Vector2(1, 1);
             rectTransform.position = new Vector3(0, 0, 0);
             rectTransform.sizeDelta = new Vector2(0, 0);
-        }
-    }
-
-    public class UIInstantiateRequest : CustomYieldInstruction
-    {
-        public UnityEvent onLoadingDelay = new UnityEvent(), onLoadingDelayDone = new UnityEvent();
-        public Action<GameObject> Complete { get; set; }
-
-        public bool IsDone { get; protected set; } = false;
-        public override bool keepWaiting => !IsDone;
-
-        public int MillisecondsDelayTimer { get; protected set; } = 1000;
-
-        public GameObject Result { get; protected set; }
-
-        public UIInstantiateRequest(IResourceLoader loader, string path, IProgress<float> progress, CancellationToken cancellationToken, int millisecondsDelayTimer = 3000, Transform parent = null)
-        {
-            MillisecondsDelayTimer = millisecondsDelayTimer;
-            UniTask.Create(async () =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                CancellationTokenSource delayCts = new CancellationTokenSource();
-                bool delayRun = false;
-                UniTask.Void(async () =>
-                {
-                    await UniTask.Delay(MillisecondsDelayTimer);
-                    if (!delayCts.IsCancellationRequested)
-                    {
-                        onLoadingDelay?.Invoke();
-                        delayRun = true;
-                    }
-                    onLoadingDelay?.RemoveAllListeners();
-                });
-
-                var res = await loader.LoadAsync(path) as GameObject;
-
-                if (res == null)
-                {
-                    throw new Exception($"{path} is not exist..");
-                }
-
-                var uiObject = Object.Instantiate(res);
-                var uiComp = uiObject.GetComponent<UIBase>();
-                uiComp.Init();
-
-
-                cancellationToken.Register(() =>
-                {
-                    Object.Destroy(uiObject);
-                });
-
-                await uiComp.LoadingAsync(progress, cancellationToken);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                IsDone = true;
-
-                delayCts.Cancel();
-                delayCts.Dispose();
-                if (delayRun)
-                    onLoadingDelayDone?.Invoke();
-
-                onLoadingDelayDone?.RemoveAllListeners();
-
-
-                if (parent != null)
-                    uiObject.GetComponent<Transform>().SetParent(parent, false);
-
-                Result = uiObject;
-
-                Complete?.Invoke(Result);
-            });
-        }
-
-
-        Object uiObject;
-
-        protected virtual Object GetResult()
-        {
-            return uiObject;
         }
     }
 }

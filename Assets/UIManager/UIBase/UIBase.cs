@@ -49,7 +49,6 @@ namespace ChickenGames.UI
 
         public virtual void Close() 
         {
-            Destroy(gameObject);
         }
     }
 }
